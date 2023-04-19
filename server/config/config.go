@@ -23,6 +23,9 @@ type Server struct {
 	TencentCOS TencentCOS `mapstructure:"tencent-cos" json:"tencent-cos" yaml:"tencent-cos"`
 	AwsS3      AwsS3      `mapstructure:"aws-s3" json:"aws-s3" yaml:"aws-s3"`
 
+	//小程序配置
+	Mini Mini `mapstructure:"mini" json:"mini" yaml:"mini"`
+
 	Excel Excel `mapstructure:"excel" json:"excel" yaml:"excel"`
 	Timer Timer `mapstructure:"timer" json:"timer" yaml:"timer"`
 

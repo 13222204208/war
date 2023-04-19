@@ -72,6 +72,16 @@ func Routers() *gin.Engine {
 		exampleRouter.InitFileUploadAndDownloadRouter(PrivateGroup) // 文件上传下载功能路由
 
 	}
+	{
+		warRouter := router.RouterGroupApp.War
+		warRouter.InitMemberRouter(PrivateGroup)
+	}
+
+	{
+		warApiRouter := router.RouterGroupApp.War
+		warGroup := Router.Group("war")
+		warApiRouter.InitMemberRouter(warGroup)
+	}
 
 	global.GVA_LOG.Info("router register success")
 	return Router

@@ -312,6 +312,16 @@
           </el-form-item>
         </el-collapse-item>
 
+        <!--mini配置-->
+        <el-collapse-item title="微信小程序配置" name="14">
+          <el-form-item label="APPID">
+            <el-input v-model="config.mini['appid']" />
+          </el-form-item>
+          <el-form-item label="SECRET">
+            <el-input v-model="config.mini['secret']" />
+          </el-form-item>
+        </el-collapse-item>
+
         <el-collapse-item title="自动化代码配置" name="12">
           <el-form-item label="是否自动重启(linux)">
             <el-checkbox v-model="config.autocode['transfer-restart']" />
@@ -396,6 +406,7 @@ const config = ref({
     'iplimit-time': 0
   },
   jwt: {},
+  mini: {},
   mysql: {},
   pgsql: {},
   excel: {},

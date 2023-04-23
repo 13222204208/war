@@ -16,6 +16,9 @@ type Member struct {
 	Weight   *int   `json:"weight" form:"weight" gorm:"column:weight;comment:单位 cm;"`
 	Phone    string `json:"phone" form:"phone" gorm:"column:phone;comment:;"`
 	Openid   string `json:"openId" form:"openId" gorm:"column:openid;comment:;"`
+	Match    *uint  `json:"match" form:"match" gorm:"column:match;comment:比赛的剩余场次;default:0;"`
+	//所属战队ID
+	TeamID *uint `json:"teamId" form:"teamId" gorm:"column:team_id;comment:所属战队ID;default:0;"`
 }
 
 // TableName Member 表名

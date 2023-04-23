@@ -8,6 +8,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/war"
 	warReq "github.com/flipped-aurora/gin-vue-admin/server/model/war/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/copilot"
+	"go.uber.org/zap"
 )
 
 type MemberService struct {
@@ -60,6 +61,14 @@ func (memberService *MemberService) GetMemberInfoList(info warReq.MemberSearch) 
 	if info.StartCreatedAt != nil && info.EndCreatedAt != nil {
 		db = db.Where("created_at BETWEEN ? AND ?", info.StartCreatedAt, info.EndCreatedAt)
 	}
+	//如果代号不为空
+	if info.Nickname != "" {
+		db = db.Where("nickname = ?", info.Nickname)
+	}
+	//如果姓名不为空
+	if info.Name != "" {
+		db = db.Where("name = ?", info.Name)
+	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return
@@ -94,5 +103,52 @@ func (memberService *MemberService) Login(code string) (member *war.Member, err 
 // 会员修改信息
 func (memberService *MemberService) UpdateMemberInfo(userID uint, member war.Member) (err error) {
 	err = global.GVA_DB.Model(&war.Member{}).Where("id = ?", userID).Updates(member).Error
+	return err
+}
+
+// 获取会员资料
+func (memberService *MemberService) GetMemberInfo(userID uint) (member war.Member, err error) {
+	err = global.GVA_DB.Where("id = ?", userID).First(&member).Error
+	return
+}
+
+// 会员增加或减少场次
+func (memberService *MemberService) AddOrUpdateMemberMatch(userID, match, matchType uint) (err error) {
+	global.GVA_LOG.Info("场次类型", zap.Any("matchType", matchType))
+	if matchType == 1 {
+		err = AddUserMatch(userID, match, "后台增加场次")
+		if err != nil {
+			return err
+		}
+	} else if matchType == 2 {
+		err = DeductUserMatch(userID, match, "后台减少场次")
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New("场次类型必须为1或者2")
+	}
+	return err
+}
+
+// 会员增加场次
+func AddUserMatch(userID, match uint, remark string) (err error) {
+	var member war.Member
+	err = global.GVA_DB.Where("id = ?", userID).First(&member).Error
+	if err != nil {
+		return err
+	} else {
+		*member.Match += match
+		err = global.GVA_DB.Save(&member).Error
+		if err != nil {
+			return err
+		}
+	}
+	var record war.MatchRecord
+	record.UserId = userID
+	record.MatchNum = match
+	record.MatchType = 1
+	record.Remark = remark
+	err = global.GVA_DB.Create(&record).Error
 	return err
 }

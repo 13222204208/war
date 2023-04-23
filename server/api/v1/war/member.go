@@ -231,3 +231,32 @@ func (memberApi *MemberApi) TokenNext(c *gin.Context, user war.Member) {
 	}, "登录成功", c)
 
 }
+
+// 获取会员资料
+func (memberApi *MemberApi) GetMemberInfo(c *gin.Context) {
+	userID := utils.GetUserID(c)
+	if user, err := memberService.GetMemberInfo(userID); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+	} else {
+		response.OkWithData(gin.H{"user": user}, c)
+	}
+}
+
+// 会员增加或修改场次
+func (memberApi *MemberApi) AddOrUpdateMemberMatch(c *gin.Context) {
+	var match warReq.MemberMatch
+	err := c.ShouldBindJSON(&match)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	global.GVA_LOG.Info("match:", zap.Any("match", match))
+	userID := utils.GetUserID(c)
+	if err := memberService.AddOrUpdateMemberMatch(userID, match.Match, match.MatchType); err != nil {
+		global.GVA_LOG.Error("修改失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("修改成功", c)
+	}
+}

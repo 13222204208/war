@@ -18,3 +18,10 @@ type MemberSearch struct {
 type WechatCode struct {
 	Code string `json:"code" form:"code"`
 }
+
+// 会员增加或修改场次
+type MemberMatch struct {
+	Match     uint `json:"match" form:"match"`
+	UserId    uint `json:"userId" form:"userId"`
+	MatchType uint `json:"matchType" form:"matchType"`
+}

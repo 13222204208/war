@@ -322,6 +322,15 @@
           </el-form-item>
         </el-collapse-item>
 
+        <el-collapse-item title="战队设置" name="15">
+          <el-form-item label="创建战队扣除的场次">
+            <el-input v-model.number="config.team['create']" />
+          </el-form-item>
+          <el-form-item label="修改战队名称扣除的场次">
+            <el-input v-model.number="config.team['update']" />
+          </el-form-item>
+        </el-collapse-item>
+
         <el-collapse-item title="自动化代码配置" name="12">
           <el-form-item label="是否自动重启(linux)">
             <el-checkbox v-model="config.autocode['transfer-restart']" />
@@ -407,6 +416,7 @@ const config = ref({
   },
   jwt: {},
   mini: {},
+  team: {},
   mysql: {},
   pgsql: {},
   excel: {},

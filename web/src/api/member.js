@@ -64,6 +64,15 @@ export const updateMember = (data) => {
   })
 }
 
+//修改会员场次
+export const updateMemberMatch = (data) => {
+  return service({
+    url: '/member/updateMemberMatch',
+    method: 'put',
+    data
+  })
+}
+
 // @Tags Member
 // @Summary 用id查询Member
 // @Security ApiKeyAuth

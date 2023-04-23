@@ -25,6 +25,8 @@ type Server struct {
 
 	//小程序配置
 	Mini Mini `mapstructure:"mini" json:"mini" yaml:"mini"`
+	//战队设置
+	Team Team `mapstructure:"team" json:"team" yaml:"team"`
 
 	Excel Excel `mapstructure:"excel" json:"excel" yaml:"excel"`
 	Timer Timer `mapstructure:"timer" json:"timer" yaml:"timer"`

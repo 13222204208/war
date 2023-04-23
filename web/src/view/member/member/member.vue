@@ -2,6 +2,15 @@
   <div>
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
+      <!--代号搜索-->
+      <el-form-item label="代号">
+        <el-input v-model="searchInfo.nickname" placeholder="请输入代号"></el-input>
+      </el-form-item>
+      <!--姓名搜索-->
+      <el-form-item label="姓名">
+        <el-input v-model="searchInfo.name" placeholder="请输入姓名"></el-input>
+      </el-form-item>
+
       <el-form-item label="创建时间">
       <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
        —
@@ -14,7 +23,7 @@
       </el-form>
     </div>
     <div class="gva-table-box">
-        <div class="gva-btn-list">
+        <!-- <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
             <p>确定要删除吗？</p>
@@ -26,7 +35,7 @@
                 <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
             </template>
             </el-popover>
-        </div>
+        </div> -->
         <el-table
         ref="multipleTable"
         style="width: 100%"
@@ -35,24 +44,32 @@
         row-key="ID"
         @selection-change="handleSelectionChange"
         >
-        <el-table-column type="selection" width="55" />
+        <!-- <el-table-column type="selection" width="55" /> -->
         <el-table-column align="left" label="日期" width="180">
             <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
-        <el-table-column align="left" label="头像" prop="avatar" width="120" />
+        <el-table-column align="left" label="图片" prop="avatar" width="80">
+            <template #default="scope">
+            <el-image style="height: 50px;" :src="imagePath+scope.row.avatar" />
+            </template>
+        </el-table-column>
+        
         <el-table-column align="left" label="代号" prop="nickname" width="120" />
         <el-table-column align="left" label="姓名" prop="name" width="120" />
-        <el-table-column align="left" label="性别" prop="gender" width="120">
+        <el-table-column align="left" label="性别" prop="gender" width="60">
             <template #default="scope">
             {{ filterDict(scope.row.gender,genderOptions) }}
             </template>
         </el-table-column>
-        <el-table-column align="left" label="身高体重" prop="height" width="120" />
-        <el-table-column align="left" label="体重" prop="weight" width="120" />
+        <el-table-column align="left" label="身高(厘米)" prop="height" width="120" />
+        <el-table-column align="left" label="体重(千克)" prop="weight" width="120" />
         <el-table-column align="left" label="电话号" prop="phone" width="120" />
         <el-table-column align="left" label="按钮组">
             <template #default="scope">
             <el-button type="primary" link icon="edit" class="table-button" @click="updateMemberFunc(scope.row)">变更</el-button>
+
+            <el-button type="primary" link icon="edit" class="table-button" @click="updateMemberMatchFunc(scope.row)">场次</el-button>
+
             <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
             </template>
         </el-table-column>
@@ -69,6 +86,29 @@
             />
         </div>
     </div>
+    <!--场次弹窗-->
+    <el-dialog v-model="dialogMatchFormVisible" :before-close="closeMatchDialog" title="场次操作">
+      <el-form :model="updateMatchData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
+        <el-form-item label="类型:"  prop="matchType" >
+          <el-radio-group v-model="updateMatchData.matchType" class="ml-4">
+            <el-radio :label=1 size="large">增加</el-radio>
+            <el-radio :label=2 size="large">减少</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="场次:"  prop="match" >
+          <el-input v-model.number="updateMatchData.match" type="number"  placeholder="请输入" />
+        </el-form-item>
+
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeMatchDialog">取 消</el-button>
+          <el-button type="primary" @click="enterDialog">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="弹窗操作">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="头像:"  prop="avatar" >
@@ -117,6 +157,7 @@ import {
   deleteMember,
   deleteMemberByIds,
   updateMember,
+  updateMemberMatch,
   findMember,
   getMemberList
 } from '@/api/member'
@@ -136,6 +177,12 @@ const formData = ref({
         height: 0,
         weight: 0,
         phone: '',
+        match: 0,
+        })
+const updateMatchData = ref({
+        match: 0,
+        matchType: 1,
+        userId:0,
         })
 
 // 验证规则
@@ -151,6 +198,7 @@ const total = ref(0)
 const pageSize = ref(10)
 const tableData = ref([])
 const searchInfo = ref({})
+const imagePath = ref(import.meta.env.VITE_IMAGE_URL)
 
 // 重置
 const onReset = () => {
@@ -264,6 +312,16 @@ const updateMemberFunc = async(row) => {
     }
 }
 
+//更新场次
+const updateMemberMatchFunc = async(row) => {
+  const res = await findMember({ ID: row.ID })
+    type.value = 'updateMatch'
+    if (res.code === 0) {
+        updateMatchData.value.userId = res.data.remember.ID
+        dialogMatchFormVisible.value = true
+    }
+}
+
 
 // 删除行
 const deleteMemberFunc = async (row) => {
@@ -283,6 +341,8 @@ const deleteMemberFunc = async (row) => {
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
 
+//场次弹窗标记
+const dialogMatchFormVisible = ref(false)
 // 打开弹窗
 const openDialog = () => {
     type.value = 'create'
@@ -302,6 +362,13 @@ const closeDialog = () => {
         phone: '',
         }
 }
+
+//关闭场次弹窗
+const closeMatchDialog = () => {
+    dialogMatchFormVisible.value = false
+}
+
+
 // 弹窗确定
 const enterDialog = async () => {
      elFormRef.value?.validate( async (valid) => {
@@ -314,6 +381,9 @@ const enterDialog = async () => {
                 case 'update':
                   res = await updateMember(formData.value)
                   break
+                case 'updateMatch':
+                  res = await updateMemberMatch(updateMatchData.value)
+                  break
                 default:
                   res = await createMember(formData.value)
                   break
@@ -324,6 +394,7 @@ const enterDialog = async () => {
                   message: '创建/更改成功'
                 })
                 closeDialog()
+                closeMatchDialog()
                 getTableData()
               }
       })

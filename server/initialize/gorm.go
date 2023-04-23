@@ -49,7 +49,7 @@ func RegisterTables() {
 		example.ExaFile{},
 		example.ExaCustomer{},
 		example.ExaFileChunk{},
-		example.ExaFileUploadAndDownload{}, war.Member{},
+		example.ExaFileUploadAndDownload{}, war.Member{}, war.Team{}, war.MatchRecord{}, war.TeamRole{}, war.TeamMember{}, war.TeamApply{}, war.Backgrounds{}, war.Banner{}, war.Announcement{}, war.Equipment{},
 	)
 	if err != nil {
 		global.GVA_LOG.Error("register table failed", zap.Error(err))

@@ -16,12 +16,16 @@ func (s *MemberRouter) InitMemberRouter(Router *gin.RouterGroup) {
 
 	memberPrivateRouter := Router.Group("member").Use(middleware.JWTAuth())
 
+	exaFileUploadAndDownloadApi := v1.ApiGroupApp.ExampleApiGroup.FileUploadAndDownloadApi
 	var memberApi = v1.ApiGroupApp.WarApiGroup.MemberApi
 	{
 		memberRouter.POST("createMember", memberApi.CreateMember)             // 新建Member
 		memberRouter.DELETE("deleteMember", memberApi.DeleteMember)           // 删除Member
 		memberRouter.DELETE("deleteMemberByIds", memberApi.DeleteMemberByIds) // 批量删除Member
 		memberRouter.PUT("updateMember", memberApi.UpdateMember)              // 更新Member
+
+		// 会员增加或修改场次
+		memberRouter.PUT("updateMemberMatch", memberApi.AddOrUpdateMemberMatch)
 	}
 	{
 		memberRouterWithoutRecord.GET("findMember", memberApi.FindMember)       // 根据ID获取Member
@@ -35,5 +39,11 @@ func (s *MemberRouter) InitMemberRouter(Router *gin.RouterGroup) {
 	{
 		//修改会员资料
 		memberPrivateRouter.PUT("update", memberApi.UpdateMemberInfo)
+
+		//获取会员资料
+		memberPrivateRouter.GET("info", memberApi.GetMemberInfo)
+
+		//图片上传
+		memberPrivateRouter.POST("upload", exaFileUploadAndDownloadApi.UploadFile)
 	}
 }

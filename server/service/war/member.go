@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/war"
 	warReq "github.com/flipped-aurora/gin-vue-admin/server/model/war/request"
+	warRes "github.com/flipped-aurora/gin-vue-admin/server/model/war/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils/copilot"
 	"go.uber.org/zap"
 )
@@ -74,7 +75,8 @@ func (memberService *MemberService) GetMemberInfoList(info warReq.MemberSearch) 
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Find(&members).Error
+	// err = db.Limit(limit).Offset(offset).Find(&members).Error
+	err = db.Table("war_member").Select("war_member.*, war_team.name as team_name").Joins("left join war_team on war_member.team_id = war_team.id").Preload("MemberLevel").Limit(limit).Offset(offset).Find(&members).Error
 	return members, total, err
 }
 
@@ -151,4 +153,76 @@ func AddUserMatch(userID, match uint, remark string) (err error) {
 	record.Remark = remark
 	err = global.GVA_DB.Create(&record).Error
 	return err
+}
+
+// 个人详情
+func (memberService *MemberService) GetMemberDetail(userID uint) (response warRes.MemberResponse, err error) {
+	var tm war.TeamMember
+	err = global.GVA_DB.Where("user_id = ?", userID).Preload("MemberInfo").Preload("TeamRoleInfo").Preload("TeamInfo").First(&tm).Error
+	if err != nil {
+		return response, err
+	}
+	response.Avatar = tm.MemberInfo.Avatar
+	response.Nickname = tm.MemberInfo.Nickname
+	response.Role = tm.TeamRoleInfo.Role
+	response.TeamName = tm.TeamInfo.Name
+	response.TeamLogo = tm.TeamInfo.Logo
+	response.DamageRatio = tm.DamageRatio
+	response.WinRateRank = 3
+	//获取个人装备
+	response.Equipments, err = GetMemberEquip(userID)
+	return response, err
+}
+
+// 查询个人装备
+func GetMemberEquip(userID uint) (m []map[string]interface{}, err error) {
+	var response []warRes.EquipmentResponse
+	//查询用户装备
+	var userEquip []war.UserEquipment
+	err = global.GVA_DB.Where("user_id = ?", userID).Preload("Category").Preload("Equipment").Find(&userEquip).Error
+	if err != nil {
+		return m, err
+	}
+	for _, v := range userEquip {
+		var equip warRes.EquipmentResponse
+		equip.Name = v.Equipment.Name
+		equip.CategoryName = v.Category.Name
+		equip.Icon = v.Equipment.Icon
+		response = append(response, equip)
+	}
+	//装备分类分组
+	m, err = GetEquipCategory(response)
+	return m, err
+}
+
+// 装备分类分组
+func GetEquipCategory(response []warRes.EquipmentResponse) (m []map[string]interface{}, err error) {
+
+	categories := make(map[string][]map[string]string)
+
+	for _, equipment := range response {
+		category := equipment.CategoryName
+		item := map[string]string{
+			"name": equipment.Name,
+			"icon": equipment.Icon,
+		}
+
+		if _, ok := categories[category]; !ok {
+			categories[category] = []map[string]string{}
+		}
+
+		categories[category] = append(categories[category], item)
+	}
+
+	result := []map[string]interface{}{}
+
+	for categoryName, children := range categories {
+		category := map[string]interface{}{
+			"categoryName": categoryName,
+			"children":     children,
+		}
+
+		result = append(result, category)
+	}
+	return result, err
 }

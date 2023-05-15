@@ -260,3 +260,14 @@ func (memberApi *MemberApi) AddOrUpdateMemberMatch(c *gin.Context) {
 		response.OkWithMessage("修改成功", c)
 	}
 }
+
+//个人详情
+func (memberApi *MemberApi) GetMemberDetail(c *gin.Context) {
+	userID := utils.GetUserID(c)
+	if user, err := memberService.GetMemberDetail(userID); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"user": user}, c)
+	}
+}

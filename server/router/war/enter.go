@@ -11,4 +11,12 @@ type RouterGroup struct {
 	BannerRouter
 	AnnouncementRouter
 	EquipmentRouter
+	UserEquipmentRouter
+	QuestionRouter
+	AnswerRouter
+	RoomRouter
+	GameRecordRouter
+	MemberRoomRouter
+	RankLevelRouter
+	MemberLevelRouter
 }

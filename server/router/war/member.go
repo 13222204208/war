@@ -45,5 +45,8 @@ func (s *MemberRouter) InitMemberRouter(Router *gin.RouterGroup) {
 
 		//图片上传
 		memberPrivateRouter.POST("upload", exaFileUploadAndDownloadApi.UploadFile)
+
+		//获取个人详情
+		memberPrivateRouter.GET("detail", memberApi.GetMemberDetail)
 	}
 }

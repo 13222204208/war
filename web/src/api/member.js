@@ -104,3 +104,12 @@ export const getMemberList = (params) => {
     params
   })
 }
+
+//获取会员等级列表
+export const getMemberLevelList = (params) => {
+  return service({
+    url: '/memberLevel/getMemberLevelList',
+    method: 'get',
+    params
+  })
+}

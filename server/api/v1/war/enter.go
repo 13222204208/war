@@ -11,4 +11,12 @@ type ApiGroup struct {
 	BannerApi
 	AnnouncementApi
 	EquipmentApi
+	UserEquipmentApi
+	QuestionApi
+	AnswerApi
+	RoomApi
+	GameRecordApi
+	MemberRoomApi
+	RankLevelApi
+	MemberLevelApi
 }

@@ -17,8 +17,20 @@ type Member struct {
 	Phone    string `json:"phone" form:"phone" gorm:"column:phone;comment:;"`
 	Openid   string `json:"openId" form:"openId" gorm:"column:openid;comment:;"`
 	Match    *uint  `json:"match" form:"match" gorm:"column:match;comment:比赛的剩余场次;default:0;"`
+	//经验值
+	Exp int `json:"exp" form:"exp" gorm:"column:exp;comment:经验值;default:0;"`
+	//军衔等级
+	RankLevelId uint `json:"rankLevelId" form:"rankLevelId" gorm:"column:rank_level_id;comment:军衔等级;default:0;"`
+	//军衔
+	RankLevel RankLevel `json:"rankLevel" form:"rankLevel" gorm:"foreignKey:RankLevelId;references:ID;"`
+
+	//会员等级
+	MemberLevelId uint `json:"memberLevelId" form:"memberLevelId" gorm:"column:member_level_id;comment:会员等级;default:1;"`
+	//会员
+	MemberLevel MemberLevel `json:"memberLevel" form:"memberLevel" gorm:"foreignKey:MemberLevelId;references:ID;"`
 	//所属战队ID
-	TeamID *uint `json:"teamId" form:"teamId" gorm:"column:team_id;comment:所属战队ID;default:0;"`
+	TeamID   *uint  `json:"teamId" form:"teamId" gorm:"column:team_id;comment:所属战队ID;default:0;"`
+	TeamName string `json:"teamName" form:"teamName"`
 }
 
 // TableName Member 表名

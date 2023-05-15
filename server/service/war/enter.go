@@ -11,4 +11,12 @@ type ServiceGroup struct {
 	BannerService
 	AnnouncementService
 	EquipmentService
+	UserEquipmentService
+	QuestionService
+	AnswerService
+	RoomService
+	GameRecordService
+	MemberRoomService
+	RankLevelService
+	MemberLevelService
 }

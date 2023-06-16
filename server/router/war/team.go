@@ -36,5 +36,8 @@ func (s *TeamRouter) InitTeamRouter(Router *gin.RouterGroup) {
 		teamPrivateRouter.GET(":id", teamApi.GetTeamDetail)
 		//获取我的战队详情
 		teamPrivateRouter.GET("my", teamApi.GetMyTeamDetail)
+
+		//战队邀请海报
+		teamPrivateRouter.GET("poster", teamApi.GetTeamPoster)
 	}
 }

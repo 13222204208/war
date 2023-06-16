@@ -14,7 +14,7 @@
       </el-form>
     </div>
     <div class="gva-table-box">
-      <div class="gva-btn-list">
+      <!-- <div class="gva-btn-list">
         <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
         <el-popover v-model:visible="deleteVisible" placement="top" width="160">
           <p>确定要删除吗？</p>
@@ -27,47 +27,91 @@
               @click="deleteVisible = true">删除</el-button>
           </template>
         </el-popover>
-      </div>
+      </div> -->
       <el-table ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID"
         @selection-change="handleSelectionChange">
-        <el-table-column type="selection" width="55" />
+        <!-- <el-table-column type="selection" width="55" />
         <el-table-column align="left" label="日期" width="180">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
-        </el-table-column>
+        </el-table-column> -->
         <!-- <el-table-column align="left" label="用户ID" prop="userId" width="120" /> -->
         <!-- 用户名称 -->
-        <el-table-column align="left" label="用户" prop="userId" width="120">
+        <!-- <el-table-column align="left" label="用户" prop="userId" width="120">
           <template #default="scope">
             {{ scope.row.user.nickname }}
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <!-- 装备分类名称 -->
         <el-table-column align="left" label="分类名称" prop="categoryId" width="120">
           <template #default="scope">
-            {{ scope.row.category.name }}
+            {{ scope.row.name }}
           </template>
         </el-table-column>
 
         <!-- 装备名称 -->
-        <el-table-column align="left" label="装备名称" prop="equipmentId" width="120">
+        <el-table-column align="left" label="装备一" prop="" width="120">
           <template #default="scope">
-            {{ scope.row.equipment.name }}
+            <div v-if="scope.row.children.length > 0">
+              <div v-if="scope.row.children[0].status == 2">
+                <el-select v-model="scope.row.children[0].ID" class="m-2" placeholder="无" size="large"
+                  @change="selectEquipment">
+                  <el-option v-for="item in scope.row.children" :key="item.ID" :label="item.name" :value="item.ID" />
+                </el-select>
+              </div>
+              <div v-else>
+                <el-select v-model="scope.row.children.ID" class="m-2" placeholder="无" size="large"
+                  @change="selectEquipment">
+                  <el-option v-for="item in scope.row.children" :key="item.ID" :label="item.name" :value="item.ID" />
+                </el-select>
+              </div>
+            </div>
+            <!-- <el-select v-model="scope.row.children[0].ID" class="m-2" placeholder="无" size="large">
+              <el-option v-for="item in scope.row.children" :key="item.ID" :label="item.name" :value="item.ID" />
+            </el-select> -->
           </template>
         </el-table-column>
         <!-- 装备图标 -->
-        <el-table-column align="left" label="装备图标" prop="equipmentId" width="120">
+        <el-table-column align="left" label="装备一图标" prop="equipmentId" width="120">
           <template #default="scope">
-            <img :src="imagePath + scope.row.equipment.icon" alt="" style="width: 50px; height: 50px;">
+            <img v-if="scope.row.children.length > 0 && scope.row.children[0].status == 2"
+              :src="imagePath + (scope.row.children[0].icon)" alt="" style="width: 50px; height: 50px;">
           </template>
         </el-table-column>
 
-        <el-table-column align="left" label="按钮组">
+        <!-- 装备名称 -->
+        <el-table-column align="left" label="装备二" prop="" width="120">
           <template #default="scope">
-            <!-- <el-button type="primary" link icon="edit" class="table-button"
-              @click="updateUserEquipmentFunc(scope.row)">变更</el-button> -->
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+            <div v-if="scope.row.children.length > 0">
+              <div v-if="scope.row.children[1].status == 2">
+                <el-select v-model="scope.row.children[1].ID" class="m-2" placeholder="无" size="large"
+                  @change="selectEquipment">
+                  <el-option v-for="item in scope.row.children" :key="item.ID" :label="item.name" :value="item.ID" />
+                </el-select>
+              </div>
+              <div v-else>
+                <el-select v-model="scope.row.children.ID" class="m-2" placeholder="无" size="large"
+                  @change="selectEquipment">
+                  <el-option v-for="item in scope.row.children" :key="item.ID" :label="item.name" :value="item.ID" />
+                </el-select>
+              </div>
+            </div>
           </template>
         </el-table-column>
+        <!-- 装备图标 -->
+        <el-table-column align="left" label="装备二图标" prop="equipmentId" width="120">
+          <template #default="scope">
+            <img v-if="scope.row.children.length > 1 && scope.row.children[1].status == 2"
+              :src="imagePath + (scope.row.children[1].icon)" alt="" style="width: 50px; height: 50px;">
+          </template>
+        </el-table-column>
+        <!-- 
+        <el-table-column align="left" label="按钮组">
+          <template #default="scope"> -->
+        <!-- <el-button type="primary" link icon="edit" class="table-button"
+              @click="updateUserEquipmentFunc(scope.row)">变更</el-button> -->
+        <!-- <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+          </template> -->
+        <!-- </el-table-column> -->
       </el-table>
       <div class="gva-pagination">
         <el-pagination layout="total, sizes, prev, pager, next, jumper" :current-page="page" :page-size="pageSize"
@@ -124,6 +168,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/pinia/modules/user'
+import { async } from 'q'
 
 const imagePath = ref(import.meta.env.VITE_IMAGE_URL)
 const userStore = useUserStore()
@@ -135,7 +180,6 @@ const formData = ref({
   userId: 0,
   categoryId: 0,
   equipmentId: 0,
-  equipment: '',
 })
 
 router.isReady().then(() => {
@@ -157,11 +201,10 @@ const elFormRef = ref()
 // =========== 表格控制部分 ===========
 const page = ref(1)
 const total = ref(0)
-const pageSize = ref(10)
+const pageSize = ref(50)
 const tableData = ref([])
 const searchInfo = ref({})
 
-const equipmentTableData = ref([])
 const needConfirm = ref(false)
 // 重置
 const onReset = () => {
@@ -192,15 +235,46 @@ const nodeChange = () => {
   needConfirm.value = true
 }
 //查询装备
-const getEquipmentTableData = async () => {
-  const table = await getEquipmentList({ page: page.value, pageSize: 1000, ...searchInfo.value })
-  if (table.code === 0) {
-    equipmentTableData.value = arraytotree(table.data.list)
-    console.log(equipmentTableData.value)
+// const getEquipmentTableData = async () => {
+//   const table = await getEquipmentList({ page: page.value, pageSize: 1000, ...searchInfo.value })
+//   if (table.code === 0) {
+//     equipmentTableData.value = arraytotree(table.data.list)
+//     console.log(equipmentTableData.value)
+//   }
+// }
+
+// getEquipmentTableData()
+
+const selectEquipment = async (value) => {
+  console.log('用户的Id', parseInt(route.query.id))
+  console.log('选中的值', value)
+  formData.value.equipment = value
+  formData.value.userId = parseInt(route.query.id)
+  const res = await createUserEquipment(formData.value)
+  console.log("返回的数据", res)
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '更改成功'
+    })
+    getTableData()
   }
 }
 
-getEquipmentTableData()
+// 查询
+const getTableData = async () => {
+  const table = await getUserEquipmentList({ page: page.value, pageSize: pageSize.value, userId: route.query.id, ...searchInfo.value })
+  console.log("查询装备", table.data.list)
+  if (table.code === 0) {
+    tableData.value = arraytotree(table.data.list)
+    console.log("树头结构", tableData.value)
+    total.value = table.data.total
+    page.value = table.data.page
+    pageSize.value = table.data.pageSize
+  }
+}
+
+getTableData()
 
 const arraytotree = (arr) => {
   var top = [], sub = [], tempObj = {};
@@ -221,19 +295,6 @@ const arraytotree = (arr) => {
   })
   return top
 }
-
-// 查询
-const getTableData = async () => {
-  const table = await getUserEquipmentList({ page: page.value, pageSize: pageSize.value, userId: route.query.id, ...searchInfo.value })
-  if (table.code === 0) {
-    tableData.value = table.data.list
-    total.value = table.data.total
-    page.value = table.data.page
-    pageSize.value = table.data.pageSize
-  }
-}
-
-getTableData()
 
 // ============== 表格控制部分结束 ===============
 
@@ -381,7 +442,7 @@ const enterDialog = async () => {
     if (res.code === 0) {
       ElMessage({
         type: 'success',
-        message: '创建/更改成功'
+        message: '更改成功'
       })
       closeDialog()
       getTableData()

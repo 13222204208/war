@@ -1,6 +1,7 @@
 package war
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -179,6 +180,23 @@ func (memberRoomApi *MemberRoomApi) SignIn(c *gin.Context) {
 	}
 }
 
+// 身份证签到
+func (memberRoomApi *MemberRoomApi) SignInByIdCard(c *gin.Context) {
+	var req warReq.IdCardVerifyReq
+	err := c.ShouldBindJSON(&req)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if err := memberRoomService.IdCardSign(req.IdCard); err != nil {
+		global.GVA_LOG.Error("签到失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("签到成功", c)
+	}
+}
+
 // 对局列表
 func (memberRoomApi *MemberRoomApi) GetMemberRoomListByUserId(c *gin.Context) {
 	userId := utils.GetUserID(c)
@@ -192,17 +210,34 @@ func (memberRoomApi *MemberRoomApi) GetMemberRoomListByUserId(c *gin.Context) {
 
 // 对局详情
 func (memberRoomApi *MemberRoomApi) GetMemberRoomDetailByRoomId(c *gin.Context) {
-	roomId := c.Query("roomId")
+	roomId := c.Param("roomId")
+	fmt.Println("roomId:", roomId)
 	//转为int
-	roomIdInt, _ := strconv.Atoi(roomId)
+	roomIdInt, err := strconv.Atoi(roomId)
+	if err != nil {
+		response.FailWithMessage("参数错误", c)
+		return
+	}
 	if roomIdInt == 0 {
 		response.FailWithMessage("参数错误", c)
 		return
 	}
-	if memberRoomInfo, err := memberRoomService.GetMemberRoomInfoByRoomId(roomIdInt); err != nil {
+	userId := utils.GetUserID(c)
+	if memberRoomInfo, err := memberRoomService.GetMemberRoomInfoByRoomId(roomIdInt, int(userId)); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithData(gin.H{"memberRoomInfo": memberRoomInfo}, c)
+	}
+}
+
+// 获取准备中的快速匹配的房间信息
+func (memberRoomApi *MemberRoomApi) GetQuickMatchRoomInfo(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	if roomInfo, err := memberRoomService.GetQuickMatchRoomInfo(userId); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"info": roomInfo}, c)
 	}
 }

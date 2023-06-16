@@ -15,6 +15,8 @@ func (s *MemberRoomRouter) InitMemberRoomRouter(Router *gin.RouterGroup) {
 	memberRoomRouterWithoutRecord := Router.Group("memberRoom")
 
 	memberRoomPrivateRouter := Router.Group("memberRoom").Use(middleware.JWTAuth())
+
+	memberRoomPublicRouter := Router.Group("memberRoom")
 	var memberRoomApi = v1.ApiGroupApp.WarApiGroup.MemberRoomApi
 	{
 		memberRoomRouter.POST("createMemberRoom", memberRoomApi.CreateMemberRoom)             // 新建MemberRoom
@@ -25,6 +27,7 @@ func (s *MemberRoomRouter) InitMemberRoomRouter(Router *gin.RouterGroup) {
 	{
 		memberRoomRouterWithoutRecord.GET("findMemberRoom", memberRoomApi.FindMemberRoom)       // 根据ID获取MemberRoom
 		memberRoomRouterWithoutRecord.GET("getMemberRoomList", memberRoomApi.GetMemberRoomList) // 获取MemberRoom列表
+
 	}
 	{
 		//用户签到
@@ -35,5 +38,12 @@ func (s *MemberRoomRouter) InitMemberRoomRouter(Router *gin.RouterGroup) {
 
 		//对局详情
 		memberRoomPrivateRouter.GET(":roomId", memberRoomApi.GetMemberRoomDetailByRoomId)
+
+		//快速匹配中的房间信息
+		memberRoomPrivateRouter.GET("quickRoom", memberRoomApi.GetQuickMatchRoomInfo)
+	}
+	{
+		//身份证签到
+		memberRoomPublicRouter.POST("card", memberRoomApi.SignInByIdCard)
 	}
 }

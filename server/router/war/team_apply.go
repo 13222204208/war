@@ -29,5 +29,8 @@ func (s *TeamApplyRouter) InitTeamApplyRouter(Router *gin.RouterGroup) {
 		teamApplyPrivateRouter.POST("join", teamApplyApi.SaveTeamApply) // 战队申请
 		//加入战队申请列表
 		teamApplyPrivateRouter.GET("list", teamApplyApi.GetTeamApplyListByUserId)
+
+		//审批用户的申请
+		teamApplyPrivateRouter.PUT(":id", teamApplyApi.ApprovalTeamApply)
 	}
 }

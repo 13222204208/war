@@ -2,6 +2,7 @@ package war
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
@@ -42,6 +43,27 @@ func (memberApi *MemberApi) CreateMember(c *gin.Context) {
 		response.FailWithMessage("创建失败", c)
 	} else {
 		response.OkWithMessage("创建成功", c)
+	}
+}
+
+// 导入excel
+func (memberApi *MemberApi) ImportExcel(c *gin.Context) {
+
+	_, header, err := c.Request.FormFile("file")
+	if err != nil {
+		global.GVA_LOG.Error("接收文件失败!", zap.Error(err))
+		response.FailWithMessage("接收文件失败", c)
+		return
+	}
+	filepath := "uploads/file/" + "excelImport.xlsx"
+	_ = c.SaveUploadedFile(header, filepath)
+
+	if err := memberService.ProcessExcelFile(filepath); err != nil {
+		global.GVA_LOG.Error("导入失败!", zap.Error(err))
+		response.FailWithMessage("导入失败", c)
+		return
+	} else {
+		response.OkWithMessage("导入成功", c)
 	}
 }
 
@@ -172,18 +194,21 @@ func (memberApi *MemberApi) GetMemberList(c *gin.Context) {
 
 // 会员登陆
 func (memberApi *MemberApi) Login(c *gin.Context) {
-	var code warReq.WechatCode
-	err := c.ShouldBindJSON(&code)
+	var l warReq.WechatLogin
+	err := c.ShouldBindJSON(&l)
 	if err != nil {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-	fmt.Println("Code:", code.Code)
-	if user, err := memberService.Login(code.Code); err != nil {
+	if len(l.Phone) != 11 {
+		response.FailWithMessage("手机号不正确", c)
+		return
+	}
+	if user, err := memberService.Login(l); err != nil {
 		global.GVA_LOG.Error("登陆失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
-		memberApi.TokenNext(c, *user)
+		memberApi.TokenNext(c, user)
 	}
 }
 
@@ -216,6 +241,8 @@ func (memberApi *MemberApi) TokenNext(c *gin.Context, user war.Member) {
 		response.FailWithMessage("获取token失败", c)
 		return
 	}
+
+	fmt.Println("我的token", token)
 	if !global.GVA_CONFIG.System.UseMultipoint {
 		response.OkWithDetailed(warRes.LoginResponse{
 			User:      user,
@@ -235,9 +262,10 @@ func (memberApi *MemberApi) TokenNext(c *gin.Context, user war.Member) {
 // 获取会员资料
 func (memberApi *MemberApi) GetMemberInfo(c *gin.Context) {
 	userID := utils.GetUserID(c)
+	fmt.Println("用户Id", userID)
 	if user, err := memberService.GetMemberInfo(userID); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
-		response.FailWithMessage("获取失败", c)
+		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithData(gin.H{"user": user}, c)
 	}
@@ -252,7 +280,7 @@ func (memberApi *MemberApi) AddOrUpdateMemberMatch(c *gin.Context) {
 		return
 	}
 	global.GVA_LOG.Info("match:", zap.Any("match", match))
-	userID := utils.GetUserID(c)
+	userID := match.UserId
 	if err := memberService.AddOrUpdateMemberMatch(userID, match.Match, match.MatchType); err != nil {
 		global.GVA_LOG.Error("修改失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
@@ -261,13 +289,80 @@ func (memberApi *MemberApi) AddOrUpdateMemberMatch(c *gin.Context) {
 	}
 }
 
-//个人详情
+// 个人详情
 func (memberApi *MemberApi) GetMemberDetail(c *gin.Context) {
-	userID := utils.GetUserID(c)
+	userId := c.Query("userId")
+	var userID uint
+	if userId != "" {
+		// Convert userId to uint data type
+		id, err := strconv.ParseUint(userId, 10, 32)
+		if err != nil {
+			response.FailWithMessage("Invalid userId", c)
+			return
+		}
+		userID = uint(id)
+	} else {
+		userID = utils.GetUserID(c)
+	}
+
 	if user, err := memberService.GetMemberDetail(userID); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithData(gin.H{"user": user}, c)
+	}
+}
+
+// 获取我的kda
+func (memberApi *MemberApi) GetMyKda(c *gin.Context) {
+	userID := utils.GetUserID(c)
+	if kda, err := memberService.GetMyKda(userID); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"info": kda}, c)
+	}
+}
+
+// 获取我的战斗信息
+func (memberApi *MemberApi) GetMyBattleInfo(c *gin.Context) {
+	userID := utils.GetUserID(c)
+	if matchInfo, err := memberService.GetMyBattleInfo(userID); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"info": matchInfo}, c)
+	}
+}
+
+// 用户排行
+func (memberApi *MemberApi) GetMemberRank(c *gin.Context) {
+	var t warReq.RankType
+	err := c.ShouldBindQuery(&t)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if rank, err := memberService.GetMemberRank(t.Type); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"rank": rank}, c)
+	}
+}
+
+// 获取会员手机号
+func (memberApi *MemberApi) GetMemberPhone(c *gin.Context) {
+	var code warReq.WechatLogin
+	err := c.ShouldBindJSON(&code)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if phone, err := memberService.GetMemberPhone(code.Code); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"phone": phone}, c)
 	}
 }

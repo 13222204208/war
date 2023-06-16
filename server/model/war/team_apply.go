@@ -10,7 +10,9 @@ type TeamApply struct {
 	global.GVA_MODEL
 	UserId uint `json:"userId" form:"userId" gorm:"column:user_id;comment:;size:11;"`
 	TeamId uint `json:"teamId" form:"teamId" gorm:"column:team_id;comment:;size:10;"`
-	Status *int `json:"status" form:"status" gorm:"column:status;comment:;"`
+	//关联会员信息
+	User   Member `json:"user" form:"user" gorm:"foreignKey:UserId;references:ID;comment:;"`
+	Status *int   `json:"status" form:"status" gorm:"column:status;comment:;default:0;size:1"`
 }
 
 // TableName TeamApply 表名

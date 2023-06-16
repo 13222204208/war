@@ -25,6 +25,13 @@ type Server struct {
 
 	//小程序配置
 	Mini Mini `mapstructure:"mini" json:"mini" yaml:"mini"`
+
+	//积分经验配置
+	Setting Setting `mapstructure:"setting" json:"setting" yaml:"setting"`
+
+	//手机短信配置
+	SmsConfig SmsConfig `mapstructure:"sms-config" json:"smsConfig" yaml:"sms-config"`
+
 	//战队设置
 	Team Team `mapstructure:"team" json:"team" yaml:"team"`
 

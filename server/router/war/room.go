@@ -32,5 +32,11 @@ func (s *RoomRouter) InitRoomRouter(Router *gin.RouterGroup) {
 	{
 		//快速匹配游戏
 		roomPrivateRouter.POST("quick", roomApi.QuickMatch)
+
+		//倒计时结束
+		roomPrivateRouter.POST("countdown", roomApi.Countdown)
+
+		//获取房间二维码
+		roomPrivateRouter.GET("qrcode", roomApi.GetRoomQrCode)
 	}
 }

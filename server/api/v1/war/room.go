@@ -105,10 +105,11 @@ func (roomApi *RoomApi) UpdateRoom(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-
-	if room.RedScore+room.BlueScore != 5 {
-		response.FailWithMessage("场次不对", c)
-		return
+	if room.Status == 4 {
+		if room.RedScore+room.BlueScore != 5 {
+			response.FailWithMessage("场次不对", c)
+			return
+		}
 	}
 
 	if err := roomService.UpdateRoom(room); err != nil {
@@ -196,5 +197,36 @@ func (roomApi *RoomApi) StartGame(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 	} else {
 		response.OkWithMessage("开始游戏成功", c)
+	}
+}
+
+// 倒计时结束解散或开始游戏
+func (roomApi *RoomApi) Countdown(c *gin.Context) {
+
+	if err := roomService.Countdown(); err != nil {
+		global.GVA_LOG.Error("倒计时结束失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("倒计时结束成功", c)
+	}
+}
+
+// 获取房间对战海报二维码
+func (roomApi *RoomApi) GetRoomQrCode(c *gin.Context) {
+	var room warReq.RoomIdReq
+	err := c.ShouldBindQuery(&room)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	if room.Id == 0 {
+		response.FailWithMessage("房间id不能为空", c)
+		return
+	}
+	if url, err := roomService.GetRoomQrCode(room.Id); err != nil {
+		global.GVA_LOG.Error("获取房间二维码失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"url": url}, c)
 	}
 }

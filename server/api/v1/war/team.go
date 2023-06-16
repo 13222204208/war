@@ -1,6 +1,8 @@
 package war
 
 import (
+	"strconv"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -28,12 +30,12 @@ func (teamApi *TeamApi) CreateTeam(c *gin.Context) {
 	}
 	//判断战队名称是否有空格，和大于36个字符 一个中文字符占3个字符
 	if team.Name == "" || len(team.Name) > 21 {
-		response.FailWithMessage("战队名称长度不合法", c)
+		response.FailWithMessage("战队名称长度不合规", c)
 		return
 	}
 	//判断战队简介是否有空格，和大于36个字符
 	if team.Description == "" || len(team.Description) > 36 {
-		response.FailWithMessage("战队简介长度不合法", c)
+		response.FailWithMessage("战队简介长度不合规", c)
 		return
 	}
 	//获取解析后的token用户id
@@ -56,12 +58,12 @@ func (teamApi *TeamApi) UpdateTeamInfo(c *gin.Context) {
 	}
 	//判断战队名称是否有空格，和大于21个字符 一个中文字符占3个字符
 	if team.Name == "" || len(team.Name) > 21 {
-		response.FailWithMessage("战队名称长度不合法", c)
+		response.FailWithMessage("战队名称长度不合规", c)
 		return
 	}
 	//判断战队简介是否有空格，和大于36个字符
 	if team.Description == "" || len(team.Description) > 36 {
-		response.FailWithMessage("战队简介长度不合法", c)
+		response.FailWithMessage("战队简介长度不合规", c)
 		return
 	}
 	//获取解析后的token用户id
@@ -86,10 +88,23 @@ func (teamApi *TeamApi) GetAllTeam(c *gin.Context) {
 }
 
 // 获取战队详情
+// GetTeamDetail 获取战队详情
+// @Tags Team
+// @Summary 获取战队详情
+// @Security ApiKeyAuth
+// @accept application/json
+// @Produce application/json
+// @Param id path uint true "战队ID"
+// @Success 200 {string} string "{"success":true,"data":{},"msg":"获取成功"}"
+// @Router /team/getTeamDetail/{id} [get]
 func (teamApi *TeamApi) GetTeamDetail(c *gin.Context) {
-	id := c.Param("id")
-	//转为Uint
-	if team, err := teamService.GetTeamDetail(id); err != nil {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		response.FailWithMessage("战队ID不合法", c)
+		return
+	}
+	if team, err := teamService.GetTeamDetail(uint(id)); err != nil {
 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
 		response.FailWithMessage(err.Error(), c)
 	} else {
@@ -254,5 +269,16 @@ func (teamApi *TeamApi) GetTeamList(c *gin.Context) {
 			Page:     pageInfo.Page,
 			PageSize: pageInfo.PageSize,
 		}, "获取成功", c)
+	}
+}
+
+// 战队邀请海报
+func (teamApi *TeamApi) GetTeamPoster(c *gin.Context) {
+	userId := utils.GetUserID(c)
+	if poster, err := teamService.GetTeamInvitePoster(userId); err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithData(gin.H{"poster": poster}, c)
 	}
 }

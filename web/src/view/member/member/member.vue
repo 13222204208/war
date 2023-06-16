@@ -3,9 +3,14 @@
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
         <!--代号搜索-->
-        <el-form-item label="代号">
+        <!-- <el-form-item label="代号">
           <el-input v-model="searchInfo.nickname" placeholder="请输入代号"></el-input>
+        </el-form-item> -->
+
+        <el-form-item label="手机号">
+          <el-input v-model="searchInfo.phone" placeholder="请输入手机号"></el-input>
         </el-form-item>
+
         <!--姓名搜索-->
         <el-form-item label="姓名">
           <el-input v-model="searchInfo.name" placeholder="请输入姓名"></el-input>
@@ -23,19 +28,24 @@
       </el-form>
     </div>
     <div class="gva-table-box">
-      <!-- <div class="gva-btn-list">
-            <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
-            <el-popover v-model:visible="deleteVisible" placement="top" width="160">
-            <p>确定要删除吗？</p>
-            <div style="text-align: right; margin-top: 8px;">
-                <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
-                <el-button type="primary" @click="onDelete">确定</el-button>
-            </div>
-            <template #reference>
-                <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length" @click="deleteVisible = true">删除</el-button>
-            </template>
-            </el-popover>
-        </div> -->
+      <div class="gva-btn-list">
+        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <el-popover v-model:visible="deleteVisible" placement="top" width="160">
+          <p>确定要删除吗？</p>
+          <div style="text-align: right; margin-top: 8px;">
+            <el-button type="primary" link @click="deleteVisible = false">取消</el-button>
+            <el-button type="primary" @click="onDelete">确定</el-button>
+          </div>
+          <template #reference>
+            <el-button icon="delete" style="margin-left: 10px;" :disabled="!multipleSelection.length"
+              @click="deleteVisible = true">删除</el-button>
+          </template>
+        </el-popover>
+        <el-upload class="excel-btn" :action="`${path}/member/importExcel`" :headers="{ 'x-token': userStore.token }"
+          :show-file-list="false">
+          <el-button style="margin-left: 10px;" type="primary" icon="upload">导入</el-button>
+        </el-upload>
+      </div>
       <el-table ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID"
         @selection-change="handleSelectionChange">
         <!-- <el-table-column type="selection" width="55" /> -->
@@ -44,7 +54,8 @@
         </el-table-column>
         <el-table-column align="left" label="图片" prop="avatar" width="80">
           <template #default="scope">
-            <el-image style="height: 50px;" :src="imagePath + scope.row.avatar" />
+            <el-image style="height: 50px;"
+              :src="scope.row.avatar.startsWith('http') ? '' + scope.row.avatar : imagePath + scope.row.avatar" />
           </template>
         </el-table-column>
 
@@ -62,6 +73,18 @@
           </template>
         </el-table-column>
 
+        <!-- 场次 -->
+        <el-table-column align="left" label="场次" prop="match" width="120">
+          <template #default="scope">
+            {{ scope.row.match }}
+          </template>
+        </el-table-column>
+        <!-- 消费积分-->
+        <el-table-column align="left" label="消费积分" prop="consumeScore" width="120">
+          <template #default="scope">
+            {{ scope.row.consumeScore }}
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="身高(厘米)" prop="height" width="120" />
         <el-table-column align="left" label="体重(千克)" prop="weight" width="120" />
         <el-table-column align="left" label="电话号" prop="phone" width="120" />
@@ -115,7 +138,7 @@
         </el-form-item>
         <el-form-item label="代号:" prop="nickname">
           <el-input v-model="formData.nickname" :clearable="true" placeholder="请输入" />
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="姓名:" prop="name">
           <el-input v-model="formData.name" :clearable="true" placeholder="请输入" />
         </el-form-item>
@@ -124,15 +147,34 @@
             <el-option v-for="(item, key) in genderOptions" :key="key" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="身高体重:" prop="height">
+        <!-- <el-form-item label="身高体重:" prop="height">
           <el-input v-model.number="formData.height" :clearable="false" placeholder="请输入" />
         </el-form-item>
         <el-form-item label="体重:" prop="weight">
           <el-input v-model.number="formData.weight" :clearable="false" placeholder="请输入" />
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="电话号:" prop="phone">
           <el-input v-model="formData.phone" :clearable="false" placeholder="请输入" />
-        </el-form-item> -->
+        </el-form-item>
+
+        <el-form-item label="族别:" prop="clan">
+          <el-input v-model="formData.clan" :clearable="false" placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="身份证号:" prop="idCard">
+          <el-input v-model="formData.idCard" :clearable="false" placeholder="请输入" />
+        </el-form-item>
+        <el-form-item label="战斗积分:" prop="score">
+          <el-input v-model.number="formData.score" :clearable="false" placeholder="请输入" type="number" :controls="false"
+            :step="1" />
+        </el-form-item>
+        <el-form-item label="消费积分:" prop="consumeScore">
+          <el-input v-model.number="formData.consumeScore" :clearable="false" placeholder="请输入" type="number"
+            :controls="false" :step="1" />
+        </el-form-item>
+        <!-- 场次 -->
+        <el-form-item label="场次:" prop="match">
+          <el-input v-model.number="formData.match" :clearable="false" placeholder="请输入" type="number" />
+        </el-form-item>
         <el-form-item label="会员等级:" prop="memberLevelId">
           <el-select v-model="formData.memberLevelId" placeholder="请选择" style="width:100%" :clearable="false">
             <el-option v-for="(item, key) in memberLevelList" :key="item.ID" :label="item.name" :value="item.ID" />
@@ -173,7 +215,10 @@ import { getDictFunc, formatDate, formatBoolean, filterDict } from '@/utils/form
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from '@/pinia/modules/user'
 
+const path = ref(import.meta.env.VITE_BASE_PATH)
+const userStore = useUserStore()
 const route = useRoute()
 const router = useRouter()
 // 自动化生成的字典（可能为空）以及字段
@@ -186,6 +231,10 @@ const formData = ref({
   height: 0,
   weight: 0,
   phone: '',
+  clan: '',
+  idCard: '',
+  score: 0,
+  consumeScore: 0,
   match: 0,
   teamName: '',
   memberLevelId: undefined,
@@ -202,7 +251,9 @@ const rule = reactive({
 
 const elFormRef = ref()
 
+const loadExcel = () => {
 
+}
 // =========== 表格控制部分 ===========
 const page = ref(1)
 const total = ref(0)
@@ -348,6 +399,7 @@ const updateMemberFunc = async (row) => {
 //更新场次
 const updateMemberMatchFunc = async (row) => {
   const res = await findMember({ ID: row.ID })
+  console.log("更新场次", res)
   type.value = 'updateMatch'
   if (res.code === 0) {
     updateMatchData.value.userId = res.data.remember.ID
@@ -393,6 +445,10 @@ const closeDialog = () => {
     height: 0,
     weight: 0,
     phone: '',
+    clan: '',
+    idCard: '',
+    score: 0,
+    consumeScore: 0,
     memberLevelId: undefined,
   }
 }
@@ -416,6 +472,7 @@ const enterDialog = async () => {
         res = await updateMember(formData.value)
         break
       case 'updateMatch':
+        console.log("更新场次", updateMatchData.value)
         res = await updateMemberMatch(updateMatchData.value)
         break
       default:

@@ -19,4 +19,6 @@ type ServiceGroup struct {
 	MemberRoomService
 	RankLevelService
 	MemberLevelService
+	TeamInvitationService
+	ComplaintService
 }

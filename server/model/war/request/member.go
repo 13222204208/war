@@ -15,8 +15,11 @@ type MemberSearch struct {
 }
 
 // 微信小程序换取openid
-type WechatCode struct {
-	Code string `json:"code" form:"code"`
+type WechatLogin struct {
+	Code     string `json:"code" form:"code"`
+	Phone    string `json:"phone" form:"phone"`
+	Avatar   string `json:"avatar" form:"avatar"`
+	Nickname string `json:"nickname" form:"nickname"`
 }
 
 // 会员增加或修改场次
@@ -24,4 +27,9 @@ type MemberMatch struct {
 	Match     uint `json:"match" form:"match"`
 	UserId    uint `json:"userId" form:"userId"`
 	MatchType uint `json:"matchType" form:"matchType"`
+}
+
+// 排行榜类型
+type RankType struct {
+	Type string `json:"type" form:"type"`
 }

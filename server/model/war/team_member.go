@@ -18,6 +18,10 @@ type TeamMember struct {
 	TeamRoleInfo *TeamRole `json:"teamRoleInfo" form:"teamRoleInfo" gorm:"foreignKey:TeamRoleId;references:ID;comment:会员角色信息;"`
 	//战队信息
 	TeamInfo *Team `json:"teamInfo" form:"teamInfo" gorm:"foreignKey:TeamId;references:ID;comment:战队信息;"`
+	//用户装备信息
+	UserEquipment []UserEquipment `json:"userEquipment" form:"userEquipment" gorm:"foreignKey:UserId;references:UserId;comment:用户装备信息;"`
+	//状态
+	Status uint `json:"status" form:"status" gorm:"column:status;comment:状态 0 未审核，1同意，2拒绝;size:1;default:0;"`
 }
 
 // TableName TeamMember 表名

@@ -2,11 +2,11 @@
   <div>
     <div class="gva-search-box">
       <el-form :inline="true" :model="searchInfo" class="demo-form-inline" @keyup.enter="onSubmit">
-      <el-form-item label="创建时间">
-      <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
-       —
-      <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束时间"></el-date-picker>
-      </el-form-item>
+        <el-form-item label="创建时间">
+          <el-date-picker v-model="searchInfo.startCreatedAt" type="datetime" placeholder="开始时间"></el-date-picker>
+          —
+          <el-date-picker v-model="searchInfo.endCreatedAt" type="datetime" placeholder="结束时间"></el-date-picker>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSubmit">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
@@ -14,7 +14,7 @@
       </el-form>
     </div>
     <div class="gva-table-box">
-        <!-- <div class="gva-btn-list">
+      <!-- <div class="gva-btn-list">
             <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
             <el-popover v-model:visible="deleteVisible" placement="top" width="160">
             <p>确定要删除吗？</p>
@@ -27,61 +27,54 @@
             </template>
             </el-popover>
         </div> -->
-        <el-table
-        ref="multipleTable"
-        style="width: 100%"
-        tooltip-effect="dark"
-        :data="tableData"
-        row-key="ID"
-        @selection-change="handleSelectionChange"
-        >
+      <el-table ref="multipleTable" style="width: 100%" tooltip-effect="dark" :data="tableData" row-key="ID"
+        @selection-change="handleSelectionChange">
         <!-- <el-table-column type="selection" width="55" /> -->
         <el-table-column align="left" label="日期" width="180">
-            <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="战队名称" prop="name" width="120" />
         <el-table-column align="left" label="队标" prop="logo" width="80">
-            <template #default="scope">
-            <el-image style="height: 50px;" :src="imagePath+scope.row.logo" />
-            </template>
+          <template #default="scope">
+            <el-image style="height: 50px;" :src="imagePath + scope.row.logo" />
+          </template>
         </el-table-column>
         <el-table-column align="left" label="简介" prop="description" width="120" />
-        <el-table-column align="left" label="积分" prop="score" width="120" />
-        <el-table-column align="left" label="战队长" prop="leaderId" width="120" />
-        <el-table-column align="left" label="按钮组">
-            <template #default="scope">
-            <el-button type="primary" link icon="edit" class="table-button" @click="updateTeamFunc(scope.row)">变更</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
-            </template>
+        <!-- <el-table-column align="left" label="积分" prop="score" width="120" /> -->
+        <el-table-column align="left" label="战队长" prop="leaderId" width="120">
+          <template #default="scope">
+            <span>{{ scope.row.leaderInfo.nickname }}</span>
+          </template>
         </el-table-column>
-        </el-table>
-        <div class="gva-pagination">
-            <el-pagination
-            layout="total, sizes, prev, pager, next, jumper"
-            :current-page="page"
-            :page-size="pageSize"
-            :page-sizes="[10, 30, 50, 100]"
-            :total="total"
-            @current-change="handleCurrentChange"
-            @size-change="handleSizeChange"
-            />
-        </div>
+        <el-table-column align="left" label="按钮组">
+          <template #default="scope">
+            <el-button type="primary" link icon="edit" class="table-button"
+              @click="updateTeamFunc(scope.row)">变更</el-button>
+            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="gva-pagination">
+        <el-pagination layout="total, sizes, prev, pager, next, jumper" :current-page="page" :page-size="pageSize"
+          :page-sizes="[10, 30, 50, 100]" :total="total" @current-change="handleCurrentChange"
+          @size-change="handleSizeChange" />
+      </div>
     </div>
     <el-dialog v-model="dialogFormVisible" :before-close="closeDialog" title="弹窗操作">
       <el-form :model="formData" label-position="right" ref="elFormRef" :rules="rule" label-width="80px">
-        <el-form-item label="战队名称:"  prop="name" >
-          <el-input v-model="formData.name" :clearable="false"  placeholder="请输入" />
+        <el-form-item label="战队名称:" prop="name">
+          <el-input v-model="formData.name" :clearable="false" placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="队标:"  prop="logo" >
-          <el-input v-model="formData.logo" :clearable="true"  placeholder="请输入" />
+        <el-form-item label="队标:" prop="logo">
+          <el-input v-model="formData.logo" :clearable="true" placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="简介:"  prop="description" >
-          <el-input v-model="formData.description" :clearable="false"  placeholder="请输入" />
+        <el-form-item label="简介:" prop="description">
+          <el-input v-model="formData.description" :clearable="false" placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="积分:"  prop="score" >
+        <el-form-item label="积分:" prop="score">
           <el-input v-model.number="formData.score" :clearable="false" placeholder="请输入" />
         </el-form-item>
-        <el-form-item label="战队长:"  prop="leaderId" >
+        <el-form-item label="战队长:" prop="leaderId">
           <el-input v-model.number="formData.leaderId" :clearable="false" placeholder="请输入" />
         </el-form-item>
       </el-form>
@@ -118,12 +111,12 @@ import { ref, reactive } from 'vue'
 
 // 自动化生成的字典（可能为空）以及字段
 const formData = ref({
-        name: '',
-        logo: '',
-        description: '',
-        score: 0,
-        leaderId: 0,
-        })
+  name: '',
+  logo: '',
+  description: '',
+  score: 0,
+  leaderId: 0,
+})
 
 // 验证规则
 const rule = reactive({
@@ -165,7 +158,7 @@ const handleCurrentChange = (val) => {
 }
 
 // 查询
-const getTableData = async() => {
+const getTableData = async () => {
   const table = await getTeamList({ page: page.value, pageSize: pageSize.value, ...searchInfo.value })
   if (table.code === 0) {
     tableData.value = table.data.list
@@ -180,7 +173,7 @@ getTableData()
 // ============== 表格控制部分结束 ===============
 
 // 获取需要的字典 可能为空 按需保留
-const setOptions = async () =>{
+const setOptions = async () => {
 }
 
 // 获取需要的字典 可能为空 按需保留
@@ -191,79 +184,79 @@ setOptions()
 const multipleSelection = ref([])
 // 多选
 const handleSelectionChange = (val) => {
-    multipleSelection.value = val
+  multipleSelection.value = val
 }
 
 // 删除行
 const deleteRow = (row) => {
-    ElMessageBox.confirm('确定要删除吗?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-    }).then(() => {
-            deleteTeamFunc(row)
-        })
-    }
+  ElMessageBox.confirm('确定要删除吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    deleteTeamFunc(row)
+  })
+}
 
 
 // 批量删除控制标记
 const deleteVisible = ref(false)
 
 // 多选删除
-const onDelete = async() => {
-      const ids = []
-      if (multipleSelection.value.length === 0) {
-        ElMessage({
-          type: 'warning',
-          message: '请选择要删除的数据'
-        })
-        return
-      }
-      multipleSelection.value &&
-        multipleSelection.value.map(item => {
-          ids.push(item.ID)
-        })
-      const res = await deleteTeamByIds({ ids })
-      if (res.code === 0) {
-        ElMessage({
-          type: 'success',
-          message: '删除成功'
-        })
-        if (tableData.value.length === ids.length && page.value > 1) {
-          page.value--
-        }
-        deleteVisible.value = false
-        getTableData()
-      }
+const onDelete = async () => {
+  const ids = []
+  if (multipleSelection.value.length === 0) {
+    ElMessage({
+      type: 'warning',
+      message: '请选择要删除的数据'
+    })
+    return
+  }
+  multipleSelection.value &&
+    multipleSelection.value.map(item => {
+      ids.push(item.ID)
+    })
+  const res = await deleteTeamByIds({ ids })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '删除成功'
+    })
+    if (tableData.value.length === ids.length && page.value > 1) {
+      page.value--
     }
+    deleteVisible.value = false
+    getTableData()
+  }
+}
 
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
 
 // 更新行
-const updateTeamFunc = async(row) => {
-    const res = await findTeam({ ID: row.ID })
-    type.value = 'update'
-    if (res.code === 0) {
-        formData.value = res.data.reteam
-        dialogFormVisible.value = true
-    }
+const updateTeamFunc = async (row) => {
+  const res = await findTeam({ ID: row.ID })
+  type.value = 'update'
+  if (res.code === 0) {
+    formData.value = res.data.reteam
+    dialogFormVisible.value = true
+  }
 }
 
 
 // 删除行
 const deleteTeamFunc = async (row) => {
-    const res = await deleteTeam({ ID: row.ID })
-    if (res.code === 0) {
-        ElMessage({
-                type: 'success',
-                message: '删除成功'
-            })
-            if (tableData.value.length === 1 && page.value > 1) {
-            page.value--
-        }
-        getTableData()
+  const res = await deleteTeam({ ID: row.ID })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '删除成功'
+    })
+    if (tableData.value.length === 1 && page.value > 1) {
+      page.value--
     }
+    getTableData()
+  }
 }
 
 // 弹窗控制标记
@@ -271,48 +264,47 @@ const dialogFormVisible = ref(false)
 
 // 打开弹窗
 const openDialog = () => {
-    type.value = 'create'
-    dialogFormVisible.value = true
+  type.value = 'create'
+  dialogFormVisible.value = true
 }
 
 // 关闭弹窗
 const closeDialog = () => {
-    dialogFormVisible.value = false
-    formData.value = {
-        name: '',
-        logo: '',
-        description: '',
-        score: 0,
-        leaderId: 0,
-        }
+  dialogFormVisible.value = false
+  formData.value = {
+    name: '',
+    logo: '',
+    description: '',
+    score: 0,
+    leaderId: 0,
+  }
 }
 // 弹窗确定
 const enterDialog = async () => {
-     elFormRef.value?.validate( async (valid) => {
-             if (!valid) return
-              let res
-              switch (type.value) {
-                case 'create':
-                  res = await createTeam(formData.value)
-                  break
-                case 'update':
-                  res = await updateTeam(formData.value)
-                  break
-                default:
-                  res = await createTeam(formData.value)
-                  break
-              }
-              if (res.code === 0) {
-                ElMessage({
-                  type: 'success',
-                  message: '创建/更改成功'
-                })
-                closeDialog()
-                getTableData()
-              }
+  elFormRef.value?.validate(async (valid) => {
+    if (!valid) return
+    let res
+    switch (type.value) {
+      case 'create':
+        res = await createTeam(formData.value)
+        break
+      case 'update':
+        res = await updateTeam(formData.value)
+        break
+      default:
+        res = await createTeam(formData.value)
+        break
+    }
+    if (res.code === 0) {
+      ElMessage({
+        type: 'success',
+        message: '创建/更改成功'
       })
+      closeDialog()
+      getTableData()
+    }
+  })
 }
 </script>
 
-<style>
-</style>
+<style></style>

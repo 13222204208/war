@@ -9,6 +9,8 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/war"
 	warReq "github.com/flipped-aurora/gin-vue-admin/server/model/war/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/copilot"
+	"gorm.io/gorm"
 )
 
 type RoomService struct {
@@ -40,6 +42,9 @@ func (roomService *RoomService) DeleteRoomByIds(ids request.IdsReq) (err error) 
 func (roomService *RoomService) UpdateRoom(room war.Room) (err error) {
 	err = global.GVA_DB.Save(&room).Error
 	if err == nil {
+		if room.Status == 3 {
+			return
+		}
 		//计算分数，胜方加30分，败方加3分
 		//获取房间信息
 		var memberRoom []war.MemberRoom
@@ -48,48 +53,40 @@ func (roomService *RoomService) UpdateRoom(room war.Room) (err error) {
 			return err
 		}
 		var faction int
-		var winExp int
-		var loseExp int
+		loseScore := room.RedScore*global.GVA_CONFIG.Setting.WinScore + room.BlueScore*global.GVA_CONFIG.Setting.LoseScore
+		winScore := room.BlueScore*global.GVA_CONFIG.Setting.WinScore + room.RedScore*global.GVA_CONFIG.Setting.LoseScore
 		if room.RedScore > room.BlueScore {
-			//红方胜利
 			faction = 1
-			winExp = room.RedScore*30 + room.BlueScore*3
 		} else {
-			loseExp = room.BlueScore*30 + room.RedScore*3
+			faction = 2
 		}
-		err = AddExp(memberRoom, faction, winExp, loseExp)
 
+		//给获胜的增加经验20，失败的12
+		var g war.SaveGameRecord
+		g.MemberRoom = memberRoom
+		g.Faction = faction
+		g.WinScore = winScore
+		g.LoseScore = loseScore
+		g.WinExperience = global.GVA_CONFIG.Setting.WinExperience
+		g.LoseExperience = global.GVA_CONFIG.Setting.LoseExperience
+		err = SaveGameRecord(&g)
+		if err == nil {
+			//更新用户的kda
+			for _, v := range memberRoom {
+				userId := v.UserId
+				kda, err := CalculateKda(userId)
+				if err != nil {
+					return err
+				}
+				//更新用户的kda
+				err = global.GVA_DB.Model(&war.Member{}).Where("id = ?", userId).Update("kda", kda).Error
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return err
-}
-
-// 给用户增加经验方法
-func AddExp(memberRoom []war.MemberRoom, faction, winExp, loseExp int) (err error) {
-	//循环
-	for _, v := range memberRoom {
-		//获取用户信息
-		var user war.Member
-		err = global.GVA_DB.Where("id = ?", v.UserId).First(&user).Error
-		if err != nil {
-			return err
-		}
-		//如果是胜利方
-		if v.Faction == faction {
-			//加30分
-			user.Exp += winExp
-		} else {
-			//加3分
-			user.Exp += loseExp
-		}
-		err = global.GVA_DB.Save(&user).Error
-		if err != nil {
-			return err
-		} else {
-			//更新用户军衔
-			UpdateRank(v.UserId, user.Exp)
-		}
-	}
-	return
 }
 
 // GetRoom 根据id获取Room记录
@@ -116,7 +113,7 @@ func (roomService *RoomService) GetRoomInfoList(info warReq.RoomSearch) (list []
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Find(&rooms).Error
+	err = db.Limit(limit).Offset(offset).Order("id DESC").Find(&rooms).Error
 	return rooms, total, err
 }
 
@@ -162,9 +159,12 @@ func GetFreeRoom() (roomId uint, err error) {
 		}
 		//name 等于当前日期加上 num+1
 		name := time.Now().Format("2006-01-02") + "-" + strconv.Itoa(int(num+1))
+		//15分钟之后的时间
+		endTime := time.Now().Add(time.Minute * 15)
 		room := war.Room{
 			Name:    name,
 			RoomNum: num + 1,
+			EndTime: endTime,
 			Status:  1,
 		}
 		err = global.GVA_DB.Create(&room).Error
@@ -220,4 +220,50 @@ func (roomService *RoomService) StartGame(roomId uint, status int) (err error) {
 	room.GameOverTime = time.Now().Add(time.Minute * 60)
 	err = global.GVA_DB.Save(&room).Error
 	return err
+}
+
+// 获取对战海报二维码
+func (roomService *RoomService) GetRoomQrCode(roomId int) (qrCode string, err error) {
+	var room war.Room
+	err = global.GVA_DB.Where("id = ?", roomId).First(&room).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", errors.New("房间不存在")
+		}
+		return "", err
+	}
+	//获取二维码pages/index/index
+	qrCode, err = copilot.GetQrCode("pages/index/index", "room_id="+strconv.Itoa(roomId))
+	if err != nil {
+		return "", err
+	}
+	return qrCode, nil
+}
+
+// 倒计时结束 删除或开始房间
+func (roomService *RoomService) Countdown() (err error) {
+	var room war.Room
+	err = global.GVA_DB.Where("status = ?", 1).First(&room).Error
+	if err != nil {
+		if err.Error() == "record not found" {
+			return errors.New("没有准备中的房间")
+		} else {
+			return err
+		}
+	}
+	//如果房间人数小于6人
+	if room.NumPlayers < 6 {
+		//删除房间
+		err = global.GVA_DB.Delete(&room).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		//开始游戏
+		err = roomService.StartGame(room.ID, 2)
+		if err != nil {
+			return err
+		}
+	}
+	return
 }

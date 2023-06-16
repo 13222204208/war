@@ -19,4 +19,6 @@ type ApiGroup struct {
 	MemberRoomApi
 	RankLevelApi
 	MemberLevelApi
+	TeamInvitationApi
+	ComplaintApi
 }

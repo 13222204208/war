@@ -19,4 +19,6 @@ type RouterGroup struct {
 	MemberRoomRouter
 	RankLevelRouter
 	MemberLevelRouter
+	TeamInvitationRouter
+	ComplaintRouter
 }

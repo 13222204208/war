@@ -1,6 +1,8 @@
 package war
 
 import (
+	"strconv"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
@@ -197,4 +199,38 @@ func (teamApplyApi *TeamApplyApi) GetTeamApplyListByUserId(c *gin.Context) {
 	} else {
 		response.OkWithData(gin.H{"list": list}, c)
 	}
+}
+
+// 审批用户的申请
+func (teamApplyApi *TeamApplyApi) ApprovalTeamApply(c *gin.Context) {
+	var teamApply warReq.TeamApplyApproval
+	if err := c.ShouldBindJSON(&teamApply); err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	teamApplyId := c.Param("id")
+	teamApplyIdInt, err := strconv.Atoi(teamApplyId)
+	if err != nil {
+		response.FailWithMessage("申请id格式错误", c)
+		return
+	}
+
+	if teamApplyIdInt == 0 {
+		response.FailWithMessage("申请id不能为空", c)
+		return
+	}
+
+	if teamApply.Status == 0 {
+		response.FailWithMessage("审批状态不能为空", c)
+		return
+	}
+
+	userId := utils.GetUserID(c)
+	if err := teamApplyService.ApprovalTeamApply(int(userId), teamApplyIdInt, teamApply.Status); err != nil {
+		global.GVA_LOG.Error("审批失败!", zap.Error(err))
+		response.FailWithMessage(err.Error(), c)
+	} else {
+		response.OkWithMessage("审批成功", c)
+	}
+
 }

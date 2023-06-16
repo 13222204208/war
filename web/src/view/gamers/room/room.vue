@@ -15,7 +15,7 @@
     </div>
     <div class="gva-table-box">
       <div class="gva-btn-list">
-        <el-button type="primary" icon="plus" @click="openDialog">新增</el-button>
+        <!-- <el-button type="primary" icon="plus" @click="openDialog">新增</el-button> -->
         <el-popover v-model:visible="deleteVisible" placement="top" width="160">
           <p>确定要删除吗？</p>
           <div style="text-align: right; margin-top: 8px;">
@@ -35,31 +35,36 @@
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="房间名称" prop="name" width="120" />
-        <el-table-column align="left" label="最少人数" prop="minPlayers" width="120" />
-        <el-table-column align="left" label="最多人数" prop="maxPlayers" width="120" />
+        <!-- <el-table-column align="left" label="最少人数" prop="minPlayers" width="120" />
+        <el-table-column align="left" label="最多人数" prop="maxPlayers" width="120" /> -->
         <el-table-column align="left" label="倒计时分钟" prop="countdown" width="120" />
         <el-table-column align="left" label="房间人数" prop="numPlayers" width="120" />
+        <el-table-column align="left" label="实到人数" prop="actualNumPlayers" width="120" />
         <el-table-column align="left" label="倒计时结束时间" width="180">
           <template #default="scope">{{ formatDate(scope.row.endTime) }}</template>
         </el-table-column>
         <el-table-column align="left" label="游戏结束时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.gameOverTime) }}</template>
+          <template #default="scope">{{ scope.row.gameOverTime === '0001-01-01T00:00:00Z' ? '--' :
+            formatDate(scope.row.gameOverTime) }}</template>
         </el-table-column>
         <!-- 游戏状态 -->
         <el-table-column align="left" label="游戏状态" width="120">
           <template #default="scope">
             <el-tag v-if="scope.row.status == 1" type="success">未开始</el-tag>
-            <el-tag v-if="scope.row.status == 2" type="warning">进行中</el-tag>
-            <el-tag v-if="scope.row.status == 3" type="danger">已结束</el-tag>
+            <el-tag v-if="scope.row.status == 2" type="warning">入场中</el-tag>
+            <el-tag v-if="scope.row.status == 3" type="danger">游戏中</el-tag>
+            <el-tag v-if="scope.row.status == 4" type="danger">已结束</el-tag>
           </template>
         </el-table-column>
         <el-table-column align="left" label="按钮组" width="180">
           <template #default="scope">
-            <el-button type="primary" link @click="startGameRow(scope.row)">开始游戏</el-button>
-
-            <el-button type="primary" link icon="edit" class="table-button"
+            <el-button v-if="scope.row.status === 1" type="primary" link @click="startGameRow(scope.row)">开始游戏</el-button>
+            <el-button v-if="scope.row.status === 2" type="primary" link @click="enterGameRow(scope.row)">进场完毕</el-button>
+            <el-button v-if="scope.row.status === 3" type="primary" link icon="edit" class="table-button"
               @click="updateRoomFunc(scope.row)">结束游戏</el-button>
-            <el-button type="primary" link icon="delete" @click="deleteRow(scope.row)">删除</el-button>
+            <el-button v-if="scope.row.status === 4" type="primary" link icon="delete"
+              @click="deleteRow(scope.row)">删除</el-button>
+
           </template>
         </el-table-column>
       </el-table>
@@ -231,6 +236,23 @@ const startGameRow = (row) => {
   })
 }
 
+//进场完毕
+const enterGameRow = async (row) => {
+  const res = await findRoom({ ID: row.ID })
+  type.value = 'update'
+  if (res.code === 0) {
+    formData.value = res.data.reroom
+    formData.value.status = 3
+    const r = await updateRoom(formData.value)
+    if (r.code === 0) {
+      ElMessage({
+        type: 'success',
+        message: '更改成功'
+      })
+      getTableData()
+    }
+  }
+}
 // 批量删除控制标记
 const deleteVisible = ref(false)
 
@@ -265,13 +287,13 @@ const onDelete = async () => {
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
 
-// 更新行
+// 更新行结束游戏
 const updateRoomFunc = async (row) => {
   const res = await findRoom({ ID: row.ID })
   type.value = 'update'
   if (res.code === 0) {
     formData.value = res.data.reroom
-    formData.value.status = 3
+    formData.value.status = 4
     dialogFormVisible.value = true
   }
 }

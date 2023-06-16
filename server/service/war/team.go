@@ -2,12 +2,16 @@ package war
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/war"
 	warReq "github.com/flipped-aurora/gin-vue-admin/server/model/war/request"
+	warRes "github.com/flipped-aurora/gin-vue-admin/server/model/war/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils/copilot"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type TeamService struct {
@@ -24,6 +28,14 @@ type TeamService struct {
 // Author [piexlmax](https://github.com/piexlmax)
 func (teamService *TeamService) DeleteTeam(team war.Team) (err error) {
 	err = global.GVA_DB.Delete(&team).Error
+	//如果删除战队成功，更改战队成员的战队id为0
+	if err == nil {
+		err = global.GVA_DB.Model(&war.Member{}).Where("team_id = ?", team.ID).Update("team_id", 0).Error
+		//删除战队成员表里的成员
+		if err == nil {
+			err = global.GVA_DB.Where("team_id = ?", team.ID).Delete(&war.TeamMember{}).Error
+		}
+	}
 	return err
 }
 
@@ -65,7 +77,7 @@ func (teamService *TeamService) GetTeamInfoList(info warReq.TeamSearch) (list []
 		return
 	}
 
-	err = db.Limit(limit).Offset(offset).Find(&teams).Error
+	err = db.Limit(limit).Offset(offset).Preload("LeaderInfo").Find(&teams).Error
 	return teams, total, err
 }
 
@@ -96,6 +108,20 @@ func (teamService *TeamService) CreateTeam(team *war.Team) (err error) {
 		tx.Rollback()
 		return err
 	}
+
+	//战队人数加1
+	// global.GVA_DB.Model(&team).Where("id = ?", team.ID).Update("team_member_num", gorm.Expr("team_member_num + ?", 1))
+	err = tx.Model(&team).Where("id = ?", team.ID).Update("team_member_num", gorm.Expr("team_member_num + ?", 1)).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	//修改用户的战队名和战队id
+	err = UpdateUserTeamNameAndTeamId(*team.LeaderId, team.Name, team.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
 	err = DeductUserMatch(*team.LeaderId, match, "创建战队扣除场次")
 	if err != nil {
 		tx.Rollback()
@@ -122,8 +148,14 @@ func (teamService *TeamService) UpdateTeamInfo(team *war.Team) (err error) {
 		if err != nil {
 			return err
 		}
+		//修改战队名成功，将之前的战队名修改为新的战队名
+		err = UpdateMemberTeamName(team.ID, team.Name)
+		if err != nil {
+			return err
+		}
 	}
 	err = global.GVA_DB.Model(&t).Updates(team).Error
+
 	return err
 }
 
@@ -134,17 +166,104 @@ func (teamService *TeamService) GetAllTeam() (list []war.Team, err error) {
 }
 
 // 获取战队详情
-func (teamService *TeamService) GetTeamDetail(teamId string) (team war.Team, err error) {
-	err = global.GVA_DB.Preload("TeamMember").Preload("TeamMember.MemberInfo").Preload("TeamMember.TeamRoleInfo").Where("id = ?", teamId).First(&team).Error
-	team.TeamMemberNum = len(team.TeamMember)
-	return team, err
+// GetTeamDetail 获取战队详情
+func (teamService *TeamService) GetTeamDetail(teamID uint) (teamInfo warRes.TeamInfo, err error) {
+	var team war.Team
+	err = global.GVA_DB.Preload("TeamMember.MemberInfo").Preload("TeamMember.TeamRoleInfo").Where("id = ?", teamID).First(&team).Error
+	if err != nil {
+		return teamInfo, err
+	}
+
+	teamInfo.Name = team.Name
+	teamInfo.Logo = team.Logo
+	teamInfo.TeamMemberNum = team.TeamMemberNum
+	teamInfo.Description = team.Description
+	fmt.Println("战队信息", global.GVA_DB.Model(&team).Association("TeamMember").Count())
+	// 判断team.TeamMember是否为空
+
+	if global.GVA_DB.Model(&team).Association("TeamMember").Count() == 0 {
+		return teamInfo, errors.New("无队员信息")
+	}
+
+	// 获取队员信息
+	for _, member := range team.TeamMember {
+		var memberInfo warRes.TeamMemberInfo
+		fmt.Println("队员信息", member.MemberInfo)
+		//队员信息不为空
+		if member.MemberInfo != nil {
+			memberInfo.Avatar = member.MemberInfo.Avatar
+			memberInfo.Nickname = member.MemberInfo.Nickname
+			memberInfo.Kda = member.MemberInfo.Kda
+		}
+		if member.TeamRoleInfo != nil {
+			memberInfo.RoleName = member.TeamRoleInfo.Role
+		}
+		// 获取队员装备信息
+		var userEquip []war.UserEquipment
+		global.GVA_DB.Where("user_id = ?", member.UserId).Preload("Equipment").Find(&userEquip)
+		for _, equip := range userEquip {
+			memberInfo.Equipments = append(memberInfo.Equipments, warRes.EquipmentIcon{
+				Icon: equip.Equipment.Icon,
+			})
+		}
+
+		teamInfo.TeamMember = append(teamInfo.TeamMember, memberInfo)
+	}
+
+	return teamInfo, nil
 }
 
 // 获取我的战队详情
 func (teamService *TeamService) GetMyTeamDetail(userId uint) (team war.Team, err error) {
-	err = global.GVA_DB.Preload("TeamMember").Preload("TeamMember.MemberInfo").Preload("TeamMember.TeamRoleInfo").Where("leader_id = ?", userId).First(&team).Error
-	team.TeamMemberNum = len(team.TeamMember)
+	//查询我的战队id
+	var member war.Member
+	err = global.GVA_DB.Where("id = ?", userId).First(&member).Error
+	if err != nil {
+		return team, err
+	}
+	if *member.TeamID == 0 {
+		return team, errors.New("你还没有战队")
+	}
+
+	err = global.GVA_DB.Preload("TeamMember").Preload("TeamMember.MemberInfo").Preload("TeamMember.UserEquipment.Equipment", func(db *gorm.DB) *gorm.DB {
+		return db.Select("id, name, icon") // 选择 Equipment 模型中的 id、name 和 icon 字段
+	}).Preload("TeamMember.TeamRoleInfo").Where("id = ?", member.TeamID).First(&team).Error
+
+	fmt.Println("team", team)
+	//判断战队是否存在
+	if err != nil {
+		return team, errors.New("战队不存在")
+	}
 	return team, err
+}
+
+// 战队邀请海报
+func (teamService *TeamService) GetTeamInvitePoster(userId uint) (poster warRes.TeamInvitePoster, err error) {
+	// 查询用户的身份是否是战队长或者副队长
+	var teamMember war.TeamMember
+	err = global.GVA_DB.Where("user_id = ?", userId).Preload("TeamInfo").First(&teamMember).Error
+	if err != nil {
+		return
+	}
+	if teamMember.TeamRoleId != 1 && teamMember.TeamRoleId != 2 {
+		return poster, errors.New("用户不是战队长或者副队长")
+	}
+	poster.TeamLogo = teamMember.TeamInfo.Logo
+	poster.TeamName = teamMember.TeamInfo.Name
+	poster.Num = teamMember.TeamInfo.TeamMemberNum
+	qrcode, err := copilot.GetQrCode("pages/index/index", fmt.Sprintf("team_id=%d", teamMember.TeamInfo.ID))
+	if err != nil {
+		return
+	}
+	poster.TeamQrCode = qrcode
+	return poster, err
+}
+
+// 修改会员的战队名称
+func UpdateMemberTeamName(teamId uint, teamName string) (err error) {
+	var m war.Member
+	err = global.GVA_DB.Model(&m).Where("team_id = ?", teamId).Update("team_name", teamName).Error
+	return err
 }
 
 // 判断战队名称是否已经存在
@@ -195,5 +314,18 @@ func DeductUserMatch(userId, match uint, remark string) (err error) {
 	record.MatchType = 2
 	record.Remark = remark
 	err = global.GVA_DB.Create(&record).Error
+	return err
+}
+
+// 修改用户的战队名称和战队id
+func UpdateUserTeamNameAndTeamId(userId uint, teamName string, teamId uint) (err error) {
+	var m war.Member
+	err = global.GVA_DB.Where("id = ?", userId).First(&m).Error
+	if err != nil {
+		return err
+	}
+	m.TeamName = teamName
+	m.TeamID = &teamId
+	err = global.GVA_DB.Save(&m).Error
 	return err
 }

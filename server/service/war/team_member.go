@@ -83,6 +83,27 @@ func (teamMemberService *TeamMemberService) UpdateTeamMemberRole(userID uint, t 
 		return errors.New("您不是队长，无法更改队员角色")
 	}
 
+	//不能更改用户为队长
+	if t.RoleId == 1 {
+		return errors.New("不能更改用户为队长")
+	}
+
 	err = global.GVA_DB.Model(&war.TeamMember{}).Where("id = ?", t.TeamMemberId).Update("team_role_id", t.RoleId).Error
+	return err
+}
+
+// 退出队伍
+func (teamMemberService *TeamMemberService) ExitTeam(userID uint) (err error) {
+	//判断userID 是不是队长
+	var team war.Team
+	err = global.GVA_DB.Where("leader_id = ?", userID).First(&team).Error
+	if err != nil {
+		return err
+	}
+	if team.ID != 0 {
+		return errors.New("队长不能退出队伍")
+	}
+
+	err = global.GVA_DB.Where("user_id = ?", userID).Delete(&war.TeamMember{}).Error
 	return err
 }

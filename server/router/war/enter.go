@@ -21,4 +21,5 @@ type RouterGroup struct {
 	MemberLevelRouter
 	TeamInvitationRouter
 	ComplaintRouter
+	SlotRouter
 }

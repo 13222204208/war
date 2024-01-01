@@ -182,3 +182,14 @@ func (teamMemberApi *TeamMemberApi) UpdateTeamMemberRole(c *gin.Context) {
 		response.OkWithMessage("更新成功", c)
 	}
 }
+
+// 退出战队
+func (teamMemberApi *TeamMemberApi) ExitTeam(c *gin.Context) {
+	userID := utils.GetUserID(c)
+	if err := teamMemberService.ExitTeam(userID); err != nil {
+		global.GVA_LOG.Error("退出失败!", zap.Error(err))
+		response.FailWithMessage("退出失败", c)
+	} else {
+		response.OkWithMessage("退出成功", c)
+	}
+}

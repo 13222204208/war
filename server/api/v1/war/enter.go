@@ -21,4 +21,5 @@ type ApiGroup struct {
 	MemberLevelApi
 	TeamInvitationApi
 	ComplaintApi
+	SlotApi
 }

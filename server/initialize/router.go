@@ -94,6 +94,7 @@ func Routers() *gin.Engine {
 		warRouter.InitMemberLevelRouter(PrivateGroup)
 		warRouter.InitTeamInvitationRouter(PrivateGroup)
 		warRouter.InitComplaintRouter(PrivateGroup)
+		warRouter.InitSlotRouter(PrivateGroup)
 	}
 
 	{
@@ -119,6 +120,7 @@ func Routers() *gin.Engine {
 		warApiRouter.InitMemberLevelRouter(warGroup)
 		warApiRouter.InitTeamInvitationRouter(warGroup)
 		warApiRouter.InitComplaintRouter(warGroup)
+		warApiRouter.InitSlotRouter(warGroup)
 	}
 
 	global.GVA_LOG.Info("router register success")

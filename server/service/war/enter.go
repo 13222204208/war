@@ -21,4 +21,5 @@ type ServiceGroup struct {
 	MemberLevelService
 	TeamInvitationService
 	ComplaintService
+	SlotService
 }

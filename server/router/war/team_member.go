@@ -28,5 +28,8 @@ func (s *TeamMemberRouter) InitTeamMemberRouter(Router *gin.RouterGroup) {
 	{
 		//更改用户的角色
 		teamMemberPrivateRouter.PUT("updateRole", teamMemberApi.UpdateTeamMemberRole)
+
+		//退出战队
+		teamMemberPrivateRouter.DELETE("exit", teamMemberApi.ExitTeam)
 	}
 }
